@@ -1,14 +1,67 @@
 //create a web server
-const express = require('express');
-const app = express();
-const port = 3000;
+//create a route to /comments
+//GET request to /comments should return a list of comments
+//POST request to /comments should add a comment to the list
+//DELETE request to /comments should remove a comment from the list
+//PUT request to /comments should update a comment
 
-//create a route
-app.get('/comments', (req, res) => {
-  res.send('Hello World!');
+var http = require('http');
+var url = require('url');
+var items = [];
+var server = http.createServer(function(req, res){
+  switch(req.method){
+    case 'POST':
+      var item = '';
+      req.setEncoding('utf8');
+      req.on('data', function(chunk){
+        item += chunk;
+      });
+      req.on('end', function(){
+        items.push(item);
+        res.end('OK\n');
+      });
+      break;
+    case 'GET':
+      items.forEach(function(item, i){
+        res.write(i + ') ' + item + '\n');
+      });
+      res.end();
+      break;
+    case 'DELETE':
+      var path = url.parse(req.url).pathname;
+      var i = parseInt(path.slice(1), 10);
+      if(isNaN(i)){
+        res.statusCode = 400;
+        res.end('Invalid item id');
+      } else if(!items[i]){
+        res.statusCode = 404;
+        res.end('Item not found');
+      } else {
+        items.splice(i, 1);
+        res.end('OK\n');
+      }
+      break;
+    case 'PUT':
+      var path = url.parse(req.url).pathname;
+      var i = parseInt(path.slice(1), 10);
+      if(isNaN(i)){
+        res.statusCode = 400;
+        res.end('Invalid item id');
+      } else if(!items[i]){
+        res.statusCode = 404;
+        res.end('Item not found');
+      } else {
+        var item = '';
+        req.setEncoding('utf8');
+        req.on('data', function(chunk){
+          item += chunk;
+        });
+        req.on('end', function(){
+          items[i] = item;
+          res.end('OK\n');
+        });
+      }
+      break;
+  }
 });
-
-//start the server
-app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`);
-});
+server.listen(3000);
